@@ -119,10 +119,7 @@ class ReleaseManager(models.Manager):
         current_version = cache.get(Release.DEFAULT_CACHE_KEY, None)
         if current_version is None:
             current_release = self.current()
-            if current_release is None:
-                current_version = ''
-            else:
-                current_version = current_release.version
+            current_version = '' if current_release is None else current_release.version
             cache.set(
                 Release.DEFAULT_CACHE_KEY,
                 current_version,

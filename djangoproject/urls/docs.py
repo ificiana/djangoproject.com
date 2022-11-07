@@ -29,10 +29,10 @@ class Sitemaps(MutableMapping):
     def __len__(self):
         return len(self.keys())
 
-    def __delitem__(key):
+    def __delitem__(self):
         raise NotImplementedError
 
-    def __setitem__(key, value):
+    def __setitem__(self, value):
         raise NotImplementedError
 
 

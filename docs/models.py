@@ -82,7 +82,7 @@ class DocumentRelease(models.Model):
         unique_together = ('lang', 'release')
 
     def __str__(self):
-        return "%s/%s" % (self.lang, self.version)
+        return f"{self.lang}/{self.version}"
 
     def get_absolute_url(self):
         kwargs = {
@@ -140,7 +140,7 @@ class DocumentRelease(models.Model):
     def scm_url(self):
         url = 'https://github.com/django/django.git'
         if not self.is_dev:
-            url += '@stable/' + self.version + '.x'
+            url += f'@stable/{self.version}.x'
         return url
 
     @transaction.atomic
@@ -156,9 +156,11 @@ class DocumentRelease(models.Model):
         robots_path = settings.BASE_DIR.joinpath('djangoproject', 'static', 'robots.docs.txt')
         with open(str(robots_path), 'r') as fh:
             excluded_paths = [
-                line.strip().split('/')[-1] for line in fh
-                if line.startswith("Disallow: /%s/%s/" % (self.lang, self.release_id))
+                line.strip().split('/')[-1]
+                for line in fh
+                if line.startswith(f"Disallow: /{self.lang}/{self.release_id}/")
             ]
+
 
         for document in decoded_documents:
             if ('body' not in document or 'title' not in document or
@@ -212,9 +214,7 @@ def document_url(doc):
 class DocumentManager(models.Manager):
 
     def breadcrumbs(self, document):
-        # get an ascending list of parent paths except the root path ('.')
-        parent_paths = list(Path(document.path).parents)[:-1]
-        if parent_paths:
+        if parent_paths := list(Path(document.path).parents)[:-1]:
             or_queries = [models.Q(path=str(path)) for path in parent_paths]
             return (self.filter(reduce(operator.or_, or_queries))
                         .filter(release_id=document.release_id)
@@ -225,8 +225,7 @@ class DocumentManager(models.Manager):
 
     def search(self, query_text, release):
         """Use full-text search to return documents matching query_text."""
-        query_text = query_text.strip()
-        if query_text:
+        if query_text := query_text.strip():
             search_query = SearchQuery(query_text, config=models.F('config'), search_type='websearch')
             search_rank = SearchRank(models.F('search'), search_query)
             similarity = TrigramSimilarity('title', query_text)

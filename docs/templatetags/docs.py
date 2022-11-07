@@ -41,8 +41,7 @@ def get_all_doc_versions(context, url=None):
     for release in DocumentRelease.objects.select_related('release').filter(lang=lang):
         version_root = get_doc_root(release.lang, release.version)
         if version_root.exists():
-            doc_path = get_doc_path(version_root, url)
-            if doc_path:
+            if doc_path := get_doc_path(version_root, url):
                 versions.append(release.version)
 
     # Save the versions into the context

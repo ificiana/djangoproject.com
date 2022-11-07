@@ -24,8 +24,7 @@ class ProfileForm(forms.ModelForm):
         fields = ['name']
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs.get('instance', None)
-        if instance:
+        if instance := kwargs.get('instance', None):
             kwargs.setdefault('initial', {}).update({'email': instance.user.email})
         super().__init__(*args, **kwargs)
 

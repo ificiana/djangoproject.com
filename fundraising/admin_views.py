@@ -24,7 +24,7 @@ def download_donor_report(modeladmin, request, queryset):
         last_gift = last_payment.donation
         last_gift_date = last_payment.date.date()
         last_gift_amount = last_payment.amount
-        primary_email = donor.email if donor.email else last_gift.receipt_email
+        primary_email = donor.email or last_gift.receipt_email
         # Include the receipt_email from Stripe if it's different from the
         # primary email.
         if primary_email and last_gift.receipt_email.lower() != primary_email.lower():

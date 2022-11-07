@@ -20,7 +20,7 @@ def release_notes(version, show_version=False):
         anchor_text = _('%(version)s release notes') % {'version': display_version}
     else:
         anchor_text = _('Online documentation')
-    release_notes_path = 'releases/%s' % display_version
+    release_notes_path = f'releases/{display_version}'
     return format_html(
         '<a href="{url}">{anchor_text}</a>',
         url=reverse(
@@ -38,6 +38,9 @@ def get_latest_micro_release(version):
     Given an X.Y version number, return the latest X.Y.Z version.
     """
     major, minor = version.split('.')
-    release = Release.objects.filter(major=major, minor=minor, status='f').order_by('-micro').first()
-    if release:
+    if (
+        release := Release.objects.filter(major=major, minor=minor, status='f')
+        .order_by('-micro')
+        .first()
+    ):
         return release.version

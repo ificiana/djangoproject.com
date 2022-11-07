@@ -27,7 +27,7 @@ class BaseContactForm(ContactForm):
     def subject(self):
         # Strip all linebreaks from the subject string.
         subject = ''.join(self.cleaned_data["message_subject"].splitlines())
-        return "[Contact form] " + subject
+        return f"[Contact form] {subject}"
 
     def message(self):
         return "From: {name} <{email}>\n\n{body}".format(**self.cleaned_data)
@@ -43,9 +43,10 @@ class BaseContactForm(ContactForm):
             try:
                 akismet_api = Akismet(
                     api_key=settings.AKISMET_API_KEY,
-                    blog_url='http://%s/' % Site.objects.get_current().domain,
-                    user_agent='Django {}.{}.{}'.format(*django.VERSION)
+                    blog_url=f'http://{Site.objects.get_current().domain}/',
+                    user_agent='Django {}.{}.{}'.format(*django.VERSION),
                 )
+
 
                 akismet_data = {
                     'user_ip': self.request.META.get('REMOTE_ADDR', ''),

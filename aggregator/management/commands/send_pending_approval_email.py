@@ -46,4 +46,4 @@ To approve them, visit: {% url 'admin:aggregator_feed_changelist' %}
                        fail_silently=False)
 
         if verbosity >= 1:
-            self.stdout.write("Sent pending approval email to: %s" % (', '.join(to_email)))
+            self.stdout.write(f"Sent pending approval email to: {', '.join(to_email)}")

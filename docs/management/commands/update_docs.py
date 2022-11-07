@@ -74,7 +74,10 @@ class Command(BaseCommand):
         for release in doc_releases:
             # Skip translated non-stable versions to avoid a crash:
             # https://github.com/django/djangoproject.com/issues/627
-            if release.lang != 'en' and not release.release.version == default_docs_version:
+            if (
+                release.lang != 'en'
+                and release.release.version != default_docs_version
+            ):
                 continue
             self.build_doc_release(release, force=kwargs['force'])
 
@@ -82,19 +85,23 @@ class Command(BaseCommand):
             call_command('update_index', **{'verbosity': self.verbosity})
 
         if self.purge_cache:
-            changed_versions = set(version for version, changed in self.release_docs_changed.items() if changed)
+            changed_versions = {
+                version
+                for version, changed in self.release_docs_changed.items()
+                if changed
+            }
+
             if changed_versions or kwargs['force']:
                 call_command('purge_docs_cache', **{'doc_versions': changed_versions, 'verbosity': self.verbosity})
-            else:
-                if self.verbosity >= 1:
-                    self.stdout.write("No docs changes; skipping cache purge.")
+            elif self.verbosity >= 1:
+                self.stdout.write("No docs changes; skipping cache purge.")
 
     def build_doc_release(self, release, force=False):
         # Skip not supported releases.
         if not release.is_supported and not force:
             return
         if self.verbosity >= 1:
-            self.stdout.write("Starting update for %s at %s..." % (release, datetime.now()))
+            self.stdout.write(f"Starting update for {release} at {datetime.now()}...")
 
         # checkout_dir is shared for all languages.
         checkout_dir = settings.DOCS_BUILD_ROOT.joinpath('sources', release.version)
@@ -114,7 +121,7 @@ class Command(BaseCommand):
         version_changed = git_changed or self.release_docs_changed.get(release.version)
         if not force and not version_changed:
             if self.verbosity >= 1:
-                self.stdout.write("No docs changes for %s, skipping docs building." % release)
+                self.stdout.write(f"No docs changes for {release}, skipping docs building.")
             return
 
         self.update_index_required = self.update_index
@@ -130,7 +137,10 @@ class Command(BaseCommand):
             if not source_dir.joinpath('locale').exists():
                 source_dir.joinpath('locale').symlink_to(trans_dir.joinpath('translations'))
             extra_kwargs = {'stdout': subprocess.DEVNULL} if self.verbosity == 0 else {}
-            subprocess.check_call('cd %s && make translations' % trans_dir, shell=True, **extra_kwargs)
+            subprocess.check_call(
+                f'cd {trans_dir} && make translations', shell=True, **extra_kwargs
+            )
+
 
         if release.is_default:
             # Build the pot files (later retrieved by Transifex)
@@ -149,25 +159,30 @@ class Command(BaseCommand):
             build_dir.mkdir(parents=True)
 
             if self.verbosity >= 2:
-                self.stdout.write("  building %s (%s -> %s)" % (builder, source_dir, build_dir))
+                self.stdout.write(f"  building {builder} ({source_dir} -> {build_dir})")
             try:
                 # Translated docs builds generate a lot of warnings, so send
                 # stderr to stdout to be logged (rather than generating an
                 # email)
-                subprocess.check_call([
-                    'sphinx-build',
-                    '-b', builder,
-                    '-D', 'language=%s' % to_locale(release.lang),
-                    '-Q' if self.verbosity == 0 else '-q',
-                    str(source_dir),        # Source file directory
-                    str(build_dir),         # Destination directory
-                ], stderr=sys.stdout)
+                subprocess.check_call(
+                    [
+                        'sphinx-build',
+                        '-b',
+                        builder,
+                        '-D',
+                        f'language={to_locale(release.lang)}',
+                        '-Q' if self.verbosity == 0 else '-q',
+                        str(source_dir),
+                        str(build_dir),
+                    ],
+                    stderr=sys.stdout,
+                )
+
             except subprocess.CalledProcessError:
                 self.stderr.write(
-                    'sphinx-build returned an error (release %s, builder %s)' % (
-                        release, builder
-                    )
+                    f'sphinx-build returned an error (release {release}, builder {builder})'
                 )
+
                 return
 
         #
@@ -175,12 +190,12 @@ class Command(BaseCommand):
         # This gets moved into MEDIA_ROOT for downloading.
         #
         html_build_dir = parent_build_dir.joinpath('_build', 'djangohtml')
-        zipfile_name = 'django-docs-%s-%s.zip' % (release.version, release.lang)
+        zipfile_name = f'django-docs-{release.version}-{release.lang}.zip'
         zipfile_path = Path(settings.MEDIA_ROOT).joinpath('docs', zipfile_name)
         if not zipfile_path.parent.exists():
             zipfile_path.parent.mkdir(parents=True)
         if self.verbosity >= 2:
-            self.stdout.write("  build zip (into %s)" % zipfile_path)
+            self.stdout.write(f"  build zip (into {zipfile_path})")
 
         def zipfile_inclusion_filter(file_path):
             return '.doctrees' not in file_path.parts
@@ -227,13 +242,10 @@ class Command(BaseCommand):
         False otherwise.
         """
         quiet = '--quiet' if self.verbosity == 0 else '--'
-        if '@' in url:
-            repo, branch = url.rsplit('@', 1)
-        else:
-            repo, branch = url, 'main'
+        repo, branch = url.rsplit('@', 1) if '@' in url else (url, 'main')
         if destdir.joinpath('.git').exists():
             remote = 'origin'
-            branch_with_remote = '%s/%s' % (remote, branch)
+            branch_with_remote = f'{remote}/{branch}'
             try:
                 cwd = os.getcwd()
                 os.chdir(str(destdir))
@@ -241,11 +253,17 @@ class Command(BaseCommand):
                 # logging (so we don't get emailed with all Git output).
                 subprocess.check_call(['git', 'reset', '--hard', 'HEAD', quiet], stderr=sys.stdout)
                 subprocess.check_call(['git', 'clean', '-fdx', quiet], stderr=sys.stdout)
-                subprocess.check_call([
-                    'git', 'fetch', remote,
-                    '%s:refs/remotes/%s' % (branch, branch_with_remote),
-                    quiet
-                ], stderr=sys.stdout)
+                subprocess.check_call(
+                    [
+                        'git',
+                        'fetch',
+                        remote,
+                        f'{branch}:refs/remotes/{branch_with_remote}',
+                        quiet,
+                    ],
+                    stderr=sys.stdout,
+                )
+
                 docs_changed = subprocess.call([
                     'git', 'diff', branch_with_remote,
                     '--quiet', '--exit-code',
@@ -268,7 +286,7 @@ def gen_decoded_documents(directory):
     for root, dirs, files in os.walk(str(directory)):
         for f in files:
             f = Path(root, f)
-            if not f.suffix == '.fjson':
+            if f.suffix != '.fjson':
                 continue
 
             with f.open() as fp:

@@ -60,15 +60,12 @@ def document(request, lang, version, url):
     except DocumentRelease.DoesNotExist:
         raise Http404
 
-    if version == 'dev':
-        rtd_version = 'latest'
-    else:
-        rtd_version = version + '.x'
-
+    rtd_version = 'latest' if version == 'dev' else f'{version}.x'
     template_names = [
-        'docs/%s.html' % str(doc_path.relative_to(docroot)).replace(str(doc_path.suffix), ''),
+        f"docs/{str(doc_path.relative_to(docroot)).replace(str(doc_path.suffix), '')}.html",
         'docs/doc.html',
     ]
+
 
     def load_json_file(path):
         with path.open('r') as f:
@@ -138,9 +135,8 @@ def redirect_search(request):
         'version': release.version,
     }
     search_url = reverse('document-search', host='docs', kwargs=kwargs)
-    q = request.GET.get('q') or None
-    if q:
-        search_url += '?q=%s' % q
+    if q := request.GET.get('q') or None:
+        search_url += f'?q={q}'
     return redirect(search_url)
 
 
@@ -167,9 +163,7 @@ def search_results(request, lang, version, per_page=10, orphans=3):
     }
 
     if form.is_valid():
-        q = form.cleaned_data.get('q')
-
-        if q:
+        if q := form.cleaned_data.get('q'):
             # catch queries that are coming from browser search bars
             exact = Document.objects.filter(release=release, title=q).first()
             if exact is not None:
@@ -197,11 +191,12 @@ def search_results(request, lang, version, per_page=10, orphans=3):
                     'message': str(e)
                 })
 
-            context.update({
+            context |= {
                 'query': q,
                 'page': page,
                 'paginator': paginator,
-            })
+            }
+
 
     return render(request, 'docs/search_results.html', context)
 
@@ -227,8 +222,7 @@ def search_suggestions(request, lang, version, per_page=20):
     suggestions = []
 
     if form.is_valid():
-        q = form.cleaned_data.get('q')
-        if q:
+        if q := form.cleaned_data.get('q'):
             results = Document.objects.filter(
                 release__lang=release.lang,
             ).filter(
@@ -247,10 +241,7 @@ def search_suggestions(request, lang, version, per_page=20):
                     'object_id': result.id,
                 }
                 links.append(reverse('contenttypes-shortcut', kwargs=kwargs))
-            suggestions.append(titles)
-            suggestions.append([])
-            suggestions.append(links)
-
+            suggestions.extend((titles, [], links))
     return JsonResponse(suggestions, safe=False)
 
 

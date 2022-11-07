@@ -70,7 +70,7 @@ class ExcludeHostsLocaleMiddlewareTests(TestCase):
     def test_docs_host_with_port_excluded(self):
         "We get no Content-Language or Vary headers when docs host (with a port) is excluded"
         with self.settings(LOCALE_MIDDLEWARE_EXCLUDED_HOSTS=[self.docs_host]):
-            resp = self.client.get('/', HTTP_HOST='%s:8000' % self.docs_host)
+            resp = self.client.get('/', HTTP_HOST=f'{self.docs_host}:8000')
         self.assertEqual(resp.status_code, HTTPStatus.FOUND)
         self.assertNotIn('Content-Language', resp)
         self.assertNotIn('Vary', resp)
@@ -102,7 +102,7 @@ class ExcludeHostsLocaleMiddlewareTests(TestCase):
     def test_www_host_with_port(self):
         "www (with a port) should still use LocaleMiddleware"
         with self.settings(LOCALE_MIDDLEWARE_EXCLUDED_HOSTS=[self.docs_host]):
-            resp = self.client.get('/', HTTP_HOST='%s:8000' % self.www_host)
+            resp = self.client.get('/', HTTP_HOST=f'{self.www_host}:8000')
         self.assertEqual(resp.status_code, HTTPStatus.OK)
         self.assertIn('Content-Language', resp)
         self.assertIn('Vary', resp)

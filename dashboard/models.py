@@ -120,10 +120,10 @@ class TracTicketMetric(Metric):
 
     def fetch(self):
         s = xmlrpc.client.ServerProxy(settings.TRAC_RPC_URL)
-        return len(s.ticket.query(self.query + "&max=0"))
+        return len(s.ticket.query(f"{self.query}&max=0"))
 
     def link(self):
-        return "%squery?%s&desc=1&order=changetime" % (settings.TRAC_URL, self.query)
+        return f"{settings.TRAC_URL}query?{self.query}&desc=1&order=changetime"
 
 
 class GithubItemCountMetric(Metric):
@@ -165,8 +165,9 @@ class GitHubSearchCountMetric(Metric):
         else:
             committer_date = today.isoformat()
         r = requests.get(
-            self.api_url + '?per_page=1&q=repo:django/django+committer-date:%s' % committer_date
+            f'{self.api_url}?per_page=1&q=repo:django/django+committer-date:{committer_date}'
         )
+
         data = r.json()
         return data['total_count']
 
@@ -217,14 +218,12 @@ class JenkinsFailuresMetric(Metric):
 
     def _calculate(self, failures, total):
         """Calculate the metric value."""
-        if self.is_success_cnt:
-            value = total - failures
-        else:
-            value = failures
+        value = total - failures if self.is_success_cnt else failures
         if self.is_percentage:
-            if not total:
+            if total:
+                value = (value * 100) / total
+            else:
                 return 0
-            value = (value * 100) / total
         return value
 
     def fetch(self):
@@ -248,4 +247,4 @@ class Datum(models.Model):
         verbose_name_plural = 'data'
 
     def __str__(self):
-        return "%s at %s: %s" % (self.metric, self.timestamp, self.measurement)
+        return f"{self.metric} at {self.timestamp}: {self.measurement}"

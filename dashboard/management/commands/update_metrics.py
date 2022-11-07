@@ -10,8 +10,8 @@ class Command(BaseCommand):
         for MC in Metric.__subclasses__():
             for metric in MC.objects.all():
                 if verbose:
-                    self.stdout.write("Updating %s ... " % metric.name.lower(), ending="")
-                datum = metric.data.create(measurement=metric.fetch())
+                    self.stdout.write(f"Updating {metric.name.lower()} ... ", ending="")
                 if verbose:
+                    datum = metric.data.create(measurement=metric.fetch())
                     print(datum.measurement)
         reset_generation_key()

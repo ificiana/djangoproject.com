@@ -60,7 +60,7 @@ def json_user_info(request):
 def get_user_info(username):
     c = caches['default']
     username = username.encode('ascii', 'ignore')
-    key = 'trac_user_info:%s' % hashlib.md5(username).hexdigest()
+    key = f'trac_user_info:{hashlib.md5(username).hexdigest()}'
     info = c.get(key)
     if info is None:
         try:
@@ -78,7 +78,7 @@ def get_user_info(username):
 def get_user_stats(user):
     c = caches['default']
     username = user.username.encode('ascii', 'ignore')
-    key = 'user_vital_status:%s' % hashlib.md5(username).hexdigest()
+    key = f'user_vital_status:{hashlib.md5(username).hexdigest()}'
     info = c.get(key)
     if info is None:
         info = trac_stats.get_user_stats(user.username)

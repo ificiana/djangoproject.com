@@ -17,7 +17,7 @@ class FeedType(models.Model):
     can_self_add = models.BooleanField(default=True)
 
     def __str__(self):
-        return "%s" % (self.name,)
+        return f"{self.name}"
 
     def items(self):
         return FeedItem.objects.filter(feed__feed_type=self)
@@ -152,10 +152,7 @@ def feed_updated(sender, notification, **kwargs):
         # 'content' takes precedence on anything else. 'summary' and
         # 'description' are usually truncated so it's safe to overwrite them
         if hasattr(entry, "content"):
-            content = ''
-            for item in entry.content:
-                content += item.value
-
+            content = ''.join(item.value for item in entry.content)
         if 'published_parsed' in entry and entry.published_parsed is not None:
             date_modified = datetime.datetime(*entry.published_parsed[:6])
         elif 'updated_parsed' in entry and entry.updated_parsed is not None:

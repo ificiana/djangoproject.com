@@ -9,7 +9,7 @@ from django_hosts.resolvers import reverse
 from sorl.thumbnail import ImageField, get_thumbnail
 
 GOAL_AMOUNT = Decimal("200000.00")
-GOAL_START_DATE = datetime.date(datetime.datetime.today().year, 1, 1)
+GOAL_START_DATE = datetime.date(datetime.datetime.now().year, 1, 1)
 DISPLAY_DONOR_DAYS = 365
 DEFAULT_DONATION_AMOUNT = 50
 LEADERSHIP_LEVEL_AMOUNT = Decimal("1000.00")
@@ -79,7 +79,7 @@ class DjangoHero(FundraisingModel):
     objects = DjangoHeroManager()
 
     def __str__(self):
-        return self.name if self.name else 'Anonymous #{}'.format(self.pk)
+        return self.name or f'Anonymous #{self.pk}'
 
     class Meta:
         verbose_name = "Django hero"
@@ -95,7 +95,7 @@ class DjangoHero(FundraisingModel):
 
     @property
     def name_with_fallback(self):
-        return self.name if self.name else 'Anonymous Hero'
+        return self.name or 'Anonymous Hero'
 
 
 class Donation(FundraisingModel):
@@ -107,7 +107,7 @@ class Donation(FundraisingModel):
     receipt_email = models.EmailField(blank=True)
 
     def __str__(self):
-        return '{} from {}'.format(self.get_interval_display(), self.donor)
+        return f'{self.get_interval_display()} from {self.donor}'
 
     def get_absolute_url(self):
         return reverse('fundraising:thank-you', kwargs={'donation': self.id})
@@ -127,7 +127,7 @@ class Payment(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return '${}'.format(self.amount)
+        return f'${self.amount}'
 
 
 class Testimonial(models.Model):

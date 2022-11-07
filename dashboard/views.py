@@ -21,9 +21,11 @@ def index(request):
             metrics.extend(MC.objects.filter(show_on_dashboard=True))
         metrics = sorted(metrics, key=operator.attrgetter('display_position'))
 
-        data = []
-        for metric in metrics:
-            data.append({'metric': metric, 'latest': metric.data.latest()})
+        data = [
+            {'metric': metric, 'latest': metric.data.latest()}
+            for metric in metrics
+        ]
+
         cache.set(key, data, 60 * 60, version=generation)
 
     return render(request, 'dashboard/index.html', {'data': data})
@@ -46,7 +48,7 @@ def metric_json(request, metric_slug):
         daysback = 30
 
     generation = generation_key()
-    key = 'dashboard:metric:%s:%s' % (metric_slug, daysback)
+    key = f'dashboard:metric:{metric_slug}:{daysback}'
 
     doc = cache.get(key, version=generation)
     if doc is None:
@@ -65,4 +67,4 @@ def _find_metric_or_404(slug):
             return MC.objects.get(slug=slug)
         except MC.DoesNotExist:
             continue
-    raise Http404('Could not find metric with slug %s' % slug)
+    raise Http404(f'Could not find metric with slug {slug}')

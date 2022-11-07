@@ -16,8 +16,7 @@ BLOG_DOCUTILS_SETTINGS = {
     'id_prefix': 's-',
     'raw_enabled': False,
     'file_insertion_enabled': False,
-}
-BLOG_DOCUTILS_SETTINGS.update(getattr(settings, 'BLOG_DOCUTILS_SETTINGS', {}))
+} | getattr(settings, 'BLOG_DOCUTILS_SETTINGS', {})
 
 
 class EntryQuerySet(models.QuerySet):

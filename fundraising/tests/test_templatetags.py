@@ -77,7 +77,7 @@ class TestDisplayDjangoHeroes(TestCase):
                 amount=10 + days,
                 stripe_charge_id=get_random_string(length=12),
             )
-            date = datetime.today() - timedelta(days=DISPLAY_DONOR_DAYS + days)
+            date = datetime.now() - timedelta(days=DISPLAY_DONOR_DAYS + days)
             Payment.objects.filter(pk=payment.pk).update(date=date)
             return hero
 
